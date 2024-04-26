@@ -8,17 +8,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/pbjer/glu"
+	l "github.com/pbjer/glu"
 )
 
 func main() {
-	thread := glu.NewThread(
-		glu.SystemMessage("When the user says 'hello', you say 'world'."),
-		glu.UserMessage("hello"))
+	thread := l.NewThread(
+		l.SystemMessage("When the user says 'hello', you say 'world'."),
+		l.UserMessage("hello"))
 
-	client := glu.NewClient(
-		glu.OpenAI("gpt-4-turbo"),
-		glu.WithAPIKey("YOUR-API-KEY"))
+	client := l.NewClient(
+		l.OpenAI("gpt-4-turbo"),
+		l.WithAPIKey("YOUR-API-KEY"))
 
 	err := client.Generate(thread)
 	if err != nil {
@@ -27,9 +27,9 @@ func main() {
 	fmt.Println(thread.LastMessage().Content)
 	// world
 	
-	thread.AddMessages(glu.UserMessage("hello"))
+	thread.AddMessages(l.UserMessage("hello"))
 	
-	err := client.GenerateStream(thread, func(response glu.StreamResponse) error {
+	err := client.GenerateStream(thread, func(response l.StreamResponse) error {
 		fmt.Println(response.Message.Content)
 	})
 	// wor
