@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 )
@@ -69,7 +68,6 @@ func (c *Client) Generate(thread *Thread) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(respBody))
 	thread.AddMessages(c.MessageDecoder.Decode(respBody))
 	return nil
 }
