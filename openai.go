@@ -23,8 +23,9 @@ func OpenAI(model string) ClientOption {
 func OpenAIRequestBuilder() RequestBuilder {
 	return func(config ClientConfig, thread *Thread) (*http.Request, error) {
 		body := map[string]any{
-			"model":  config.Model,
-			"stream": config.Stream,
+			"model":       config.Model,
+			"stream":      config.Stream,
+			"temperature": config.Temperature,
 		}
 		if config.ResponseFormat == "json" {
 			body["response_format"] = map[string]any{

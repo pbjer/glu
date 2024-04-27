@@ -26,12 +26,19 @@ func WithJSONResponse() ClientOption {
 	}
 }
 
+func WithTemperature(tmp float32) ClientOption {
+	return func(c *Client) {
+		c.config.Temperature = tmp
+	}
+}
+
 type ClientConfig struct {
 	RequestURL     string
 	APIKey         string
 	Model          string
 	ResponseFormat string
 	Stream         bool
+	Temperature    float32
 }
 
 type RequestBuilder func(config ClientConfig, thread *Thread) (*http.Request, error)
