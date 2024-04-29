@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type MessageDecoder interface {
@@ -92,6 +93,7 @@ func (c *Client) GenerateStream(thread *Thread, handler StreamResponseHandler) e
 	}
 	defer resp.Body.Close()
 
+	var sb strings.Builder
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		line := scanner.Bytes()
@@ -103,6 +105,7 @@ func (c *Client) GenerateStream(thread *Thread, handler StreamResponseHandler) e
 			continue // Skip lines that cannot be parsed as JSON
 		}
 		message := c.StreamingMessageDecoder.Decode(rawMessage)
+		sb.WriteString(message.Content)
 		if err := handler(StreamResponse{Message: message}); err != nil {
 			return err // Handle errors from the handler
 		}
@@ -111,6 +114,7 @@ func (c *Client) GenerateStream(thread *Thread, handler StreamResponseHandler) e
 		return err // Handle scanner errors
 	}
 
+	thread.AddMessages(AssistantMessage(sb.String()))
 	return nil
 }
 
