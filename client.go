@@ -13,6 +13,10 @@ type MessageDecoder interface {
 	Decode([]byte) Message
 }
 
+type StreamMessageDecoder interface {
+	Decode([]byte) StreamMessage
+}
+
 type ClientOption func(c *Client)
 
 func WithAPIKey(apiKey string) ClientOption {
@@ -48,7 +52,7 @@ type Client struct {
 	config                  ClientConfig
 	BuildRequest            RequestBuilder
 	MessageDecoder          MessageDecoder
-	StreamingMessageDecoder MessageDecoder
+	StreamingMessageDecoder StreamMessageDecoder
 }
 
 func NewClient(options ...ClientOption) *Client {
@@ -80,7 +84,7 @@ func (c *Client) Generate(thread *Thread) error {
 	return nil
 }
 
-func (c *Client) GenerateStream(thread *Thread, handler StreamResponseHandler) error {
+func (c *Client) GenerateStream(thread *Thread, handler StreamMessageHandler) error {
 	c.config.Stream = true
 	req, err := c.BuildRequest(c.config, thread)
 	if err != nil {
@@ -104,9 +108,9 @@ func (c *Client) GenerateStream(thread *Thread, handler StreamResponseHandler) e
 		if err != nil {
 			continue // Skip lines that cannot be parsed as JSON
 		}
-		message := c.StreamingMessageDecoder.Decode(rawMessage)
-		sb.WriteString(message.Content)
-		if err := handler(StreamResponse{Message: message}); err != nil {
+		streamMessage := c.StreamingMessageDecoder.Decode(rawMessage)
+		sb.WriteString(streamMessage.Message.Content)
+		if err := handler(StreamMessage{Message: streamMessage.Message, Done: streamMessage.Done}); err != nil {
 			return err // Handle errors from the handler
 		}
 	}
@@ -118,8 +122,9 @@ func (c *Client) GenerateStream(thread *Thread, handler StreamResponseHandler) e
 	return nil
 }
 
-type StreamResponse struct {
+type StreamMessage struct {
 	Message Message `json:"message"`
+	Done    bool    `json:"done"`
 }
 
-type StreamResponseHandler func(StreamResponse) error
+type StreamMessageHandler func(StreamMessage) error

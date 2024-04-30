@@ -12,8 +12,8 @@ func Ollama(model string) ClientOption {
 			RequestURL: "http://localhost:11434/api/chat",
 			Model:      model,
 		}
-		c.MessageDecoder = &MessageResponseBody{}
-		c.StreamingMessageDecoder = &MessageResponseBody{}
+		c.MessageDecoder = &OllamaMessageResponseBody{}
+		c.StreamingMessageDecoder = &OllamaStreamMessageResponseBody{}
 		c.BuildRequest = OllamaRequestBuilder()
 	}
 }
@@ -46,11 +46,24 @@ func OllamaRequestBuilder() RequestBuilder {
 	}
 }
 
-type MessageResponseBody struct {
+type OllamaMessageResponseBody struct {
 	Message Message `json:"message"`
 }
 
-func (m *MessageResponseBody) Decode(bytes []byte) Message {
+func (m *OllamaMessageResponseBody) Decode(bytes []byte) Message {
 	json.Unmarshal(bytes, m)
 	return m.Message
+}
+
+type OllamaStreamMessageResponseBody struct {
+	Message Message `json:"message"`
+	Done    bool    `json:"done"`
+}
+
+func (m *OllamaStreamMessageResponseBody) Decode(bytes []byte) StreamMessage {
+	json.Unmarshal(bytes, m)
+	return StreamMessage{
+		Message: m.Message,
+		Done:    m.Done,
+	}
 }

@@ -51,7 +51,11 @@ func OpenAIRequestBuilder() RequestBuilder {
 }
 
 type OpenAIChoiceResponseBody struct {
-	Choices []MessageResponseBody `json:"choices"`
+	Choices []OpenAIMessageResponseBody `json:"choices"`
+}
+
+type OpenAIMessageResponseBody struct {
+	Message Message `json:"message"`
 }
 
 func (c *OpenAIChoiceResponseBody) Decode(bytes []byte) Message {
@@ -60,14 +64,22 @@ func (c *OpenAIChoiceResponseBody) Decode(bytes []byte) Message {
 }
 
 type OpenAIStreamChoiceResponseBody struct {
-	Message Message `json:"delta"`
+	Message      Message `json:"delta"`
+	FinishReason string  `json:"finish_reason"`
 }
 
 type OpenAIStreamResponseBody struct {
 	Choices []OpenAIStreamChoiceResponseBody `json:"choices"`
 }
 
-func (c *OpenAIStreamResponseBody) Decode(bytes []byte) Message {
+func (c *OpenAIStreamResponseBody) Decode(bytes []byte) StreamMessage {
 	json.Unmarshal(bytes, c)
-	return c.Choices[0].Message
+	done := false
+	if c.Choices[0].FinishReason != "" {
+		done = true
+	}
+	return StreamMessage{
+		Message: c.Choices[0].Message,
+		Done:    done,
+	}
 }
