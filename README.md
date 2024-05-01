@@ -29,8 +29,9 @@ func main() {
 	
 	thread.AddMessages(l.UserMessage("hello"))
 	
-	err := client.GenerateStream(thread, func(response l.StreamResponse) error {
+	err = client.GenerateStream(thread, func(response l.StreamMessage) error {
 		fmt.Println(response.Message.Content)
+		return nil
 	})
 	// wor
 	// ld
