@@ -12,9 +12,36 @@ func Ollama(model string) ClientOption {
 			RequestURL: "http://localhost:11434/api/chat",
 			Model:      model,
 		}
+
 		c.MessageDecoder = &OllamaMessageResponseBody{}
 		c.StreamingMessageDecoder = &OllamaStreamMessageResponseBody{}
+		c.EmbeddingDecoder = &OllamaEmbeddingResponseBody{}
+
 		c.BuildRequest = OllamaRequestBuilder()
+		c.BuildEmbeddingRequest = OllamaEmbeddingRequestBuilder()
+	}
+}
+
+func OllamaEmbeddingRequestBuilder() EmbeddingRequestBuilder {
+	return func(config ClientConfig, text string) (*http.Request, error) {
+		body := map[string]any{
+			"model":  config.Model,
+			"prompt": text,
+		}
+
+		reqBody, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+
+		req, err := http.NewRequest(http.MethodPost, "http://localhost:11434/api/embeddings", bytes.NewBuffer(reqBody))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Add("Content-Type", "application/json")
+		req.Header.Add("Authorization", "Bearer "+config.APIKey)
+
+		return req, nil
 	}
 }
 
@@ -66,4 +93,13 @@ func (m *OllamaStreamMessageResponseBody) Decode(bytes []byte) StreamMessage {
 		Message: m.Message,
 		Done:    m.Done,
 	}
+}
+
+type OllamaEmbeddingResponseBody struct {
+	Embedding []float32 `json:"embedding"`
+}
+
+func (m *OllamaEmbeddingResponseBody) Decode(bytes []byte) Embedding {
+	json.Unmarshal(bytes, m)
+	return m.Embedding
 }

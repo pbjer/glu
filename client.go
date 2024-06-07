@@ -48,10 +48,18 @@ type ClientConfig struct {
 
 type RequestBuilder func(config ClientConfig, thread *Thread) (*http.Request, error)
 
+type EmbeddingRequestBuilder func(config ClientConfig, text string) (*http.Request, error)
+
+type EmbeddingDecoder interface {
+	Decode([]byte) Embedding
+}
+
 type Client struct {
 	config                  ClientConfig
 	BuildRequest            RequestBuilder
+	BuildEmbeddingRequest   EmbeddingRequestBuilder
 	MessageDecoder          MessageDecoder
+	EmbeddingDecoder        EmbeddingDecoder
 	StreamingMessageDecoder StreamMessageDecoder
 }
 
@@ -128,3 +136,24 @@ type StreamMessage struct {
 }
 
 type StreamMessageHandler func(StreamMessage) error
+
+func (c *Client) GenerateEmbedding(text string) (Embedding, error) {
+	req, err := c.BuildEmbeddingRequest(c.config, text)
+	if err != nil {
+		return Embedding{}, err
+	}
+
+	client := http.DefaultClient
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return Embedding{}, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return Embedding{}, err
+	}
+	return c.EmbeddingDecoder.Decode(respBody), nil
+}
